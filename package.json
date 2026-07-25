@@ -1,0 +1,47 @@
+{
+  "name": "hilos-automatic-summary",
+  "version": "0.2.12",
+  "description": "一个自动总结脚本",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build --mode production",
+    "lint": "eslint src --ext .js",
+    "lint:fix": "eslint src --ext .js --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "test": "jest --config ./jest.config.ts",
+    "test:watch": "jest --watch --config ./jest.config.ts",
+    "test:coverage": "jest --coverage --config ./jest.config.ts"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/dedent": "^0.7.2",
+    "@types/jest": "^30.0.0",
+    "@types/jquery": "^3.5.34",
+    "@types/lodash": "^4.17.24",
+    "@types/node": "^25.6.0",
+    "@types/toastr": "^2.1.43",
+    "compare-versions": "^6.1.1",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "jest": "^30.3.0",
+    "jiti": "^2.7.0",
+    "klona": "^2.0.6",
+    "lodash": "^4.18.1",
+    "prettier": "^3.8.3",
+    "terser": "^5.46.1",
+    "ts-jest": "^29.4.9",
+    "type-fest": "^5.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.58.2",
+    "vite": "^7.3.2",
+    "vue": "^3.5.32",
+    "zod": "^4.3.6"
+  }
+}
