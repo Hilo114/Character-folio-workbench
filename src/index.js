@@ -1537,7 +1537,6 @@ async function start() {
   });
   on(win, 'resize', () => {
     layoutFrame();
-    render();
   });
 
   let cleaned = false;
