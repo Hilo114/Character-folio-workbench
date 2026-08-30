@@ -263,6 +263,18 @@ const styles = `
 #${APP_ID} .input:focus,#${APP_ID} .textarea:focus,#${APP_ID} .select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(50,107,120,.14)}
 #${APP_ID} .invalid{border-color:var(--red)!important}
 #${APP_ID} .error-text{color:var(--red);font-size:11px;margin-top:5px}
+#${APP_ID} .model-input-row{display:flex;gap:7px;align-items:stretch}
+#${APP_ID} .model-input-row .input{min-width:0;flex:1}
+#${APP_ID} .model-toggle{flex:0 0 62px;padding:0 9px}
+#${APP_ID} .model-list{margin-top:6px;padding:4px;border:1px solid var(--line);border-radius:8px;background:#fffdf7;max-height:176px;overflow-y:auto;box-shadow:0 5px 14px rgba(46,48,44,.12)}
+#${APP_ID} .model-option{width:100%;min-height:34px;border:0;border-radius:6px;background:transparent;color:var(--ink);padding:7px 8px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;user-select:text;-webkit-user-select:text}
+#${APP_ID} .model-option:hover,#${APP_ID} .model-option:focus-visible{background:var(--blue-soft);color:#234f59}
+#${APP_ID} .model-option.active{background:#e7dfd0;font-weight:700}
+#${APP_ID} .model-status{display:flex;align-items:flex-start;gap:6px;margin-top:7px;padding:7px 9px;border-radius:7px;font-size:11px;line-height:1.4}
+#${APP_ID} .model-status.loading{background:var(--blue-soft);color:var(--blue)}
+#${APP_ID} .model-status.success{background:#dce8dc;color:#315b3f}
+#${APP_ID} .model-status.error{background:var(--red-soft);color:#74372e}
+#${APP_ID} .model-status-mark{font-weight:900;line-height:1.35}
 #${APP_ID} .hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:6px}
 #${APP_ID} .notice{border-left:3px solid var(--blue);background:var(--blue-soft);padding:10px 12px;margin:0 0 14px;font-size:12px;line-height:1.5}
 #${APP_ID} .notice.error{border-color:var(--red);background:var(--red-soft);color:#74372e}
@@ -797,6 +809,9 @@ async function start() {
     models: [],
     modelsLoading: false,
     modelError: '',
+    modelStatus: '',
+    modelStatusType: '',
+    modelListOpen: false,
     notice: '',
     noticeType: '',
     candidates: [],
@@ -911,6 +926,18 @@ async function start() {
     const s = state.settingsDraft;
     const field = (key, label, type = 'text', extra = '') =>
       `<div class="field"><label for="setting-${key}">${label}</label><input class="input ${state.settingsErrors[key] ? 'invalid' : ''}" id="setting-${key}" data-setting="${key}" type="${type}" value="${escapeHtml(s[key])}" ${extra}>${state.settingsErrors[key] ? `<div class="error-text">${escapeHtml(state.settingsErrors[key])}</div>` : ''}</div>`;
+    const modelOptions =
+      state.modelListOpen && state.models.length
+        ? `<div class="model-list" role="listbox" aria-label="已获取的模型">${state.models
+            .map(
+              (model, index) =>
+                `<button class="model-option ${model === s.model ? 'active' : ''}" type="button" role="option" aria-selected="${model === s.model}" data-action="select-model" data-model-index="${index}" title="${escapeHtml(model)}">${escapeHtml(model)}</button>`
+            )
+            .join('')}</div>`
+        : '';
+    const modelStatus = state.modelStatus
+      ? `<div class="model-status ${escapeHtml(state.modelStatusType)}" role="status" aria-live="polite"><span class="model-status-mark">${state.modelStatusType === 'success' ? '✓' : state.modelStatusType === 'error' ? '!' : '…'}</span><span>${escapeHtml(state.modelStatus)}</span></div>`
+      : '';
     return `<div class="eyebrow">API / OpenAI compatible</div>
       <h2>连接设置</h2>
       <p class="lead">两个生成阶段共享同一份设置快照。候选生成开始后，本批次不受后续设置修改影响。</p>
@@ -918,10 +945,17 @@ async function start() {
       <div class="setting-box">
         ${field('apiurl', 'API 地址', 'url', 'placeholder="https://example.com/v1" autocomplete="url"')}
         <div class="field"><label for="setting-key">API Key</label><div style="display:flex;gap:7px"><input class="input" id="setting-key" data-setting="key" type="password" value="${escapeHtml(s.key)}" autocomplete="off" placeholder="sk-…"><button class="btn" type="button" data-action="toggle-key">显示</button></div></div>
-        ${field('model', '模型', 'text', 'list="model-options" placeholder="输入或获取模型名称" autocomplete="off"')}
-        <datalist id="model-options">${state.models.map(model => `<option value="${escapeHtml(model)}"></option>`).join('')}</datalist>
+        <div class="field model-field">
+          <label for="setting-model">模型</label>
+          <div class="model-input-row">
+            <input class="input ${state.settingsErrors.model ? 'invalid' : ''}" id="setting-model" data-setting="model" type="text" value="${escapeHtml(s.model)}" placeholder="${state.models.length ? `已获取 ${state.models.length} 个模型，可输入或选择` : '输入或获取模型名称'}" autocomplete="off">
+            <button class="btn model-toggle" type="button" data-action="toggle-model-list" ${state.models.length ? '' : 'disabled'}>${state.modelListOpen ? '收起' : '选择'}</button>
+          </div>
+          ${state.settingsErrors.model ? `<div class="error-text">${escapeHtml(state.settingsErrors.model)}</div>` : ''}
+          ${modelOptions}
+        </div>
         <button class="btn wide" type="button" data-action="load-models" ${state.modelsLoading ? 'disabled' : ''}>${state.modelsLoading ? '<span class="loader"></span> 正在获取' : '获取模型列表'}</button>
-        ${state.modelError ? `<div class="error-text">${escapeHtml(state.modelError)}</div>` : ''}
+        ${modelStatus}
       </div>
       <div class="eyebrow">Sampling / advanced</div>
       <div class="setting-box">${PARAM_DEFS.map(def => {
@@ -1335,12 +1369,20 @@ async function start() {
       const url = new URL(apiurl);
       if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
     } catch (_) {
+      state.models = [];
       state.modelError = '请先填写有效的 API 地址';
+      state.modelStatus = state.modelError;
+      state.modelStatusType = 'error';
+      state.modelListOpen = false;
       render();
       return;
     }
     state.modelsLoading = true;
+    state.models = [];
     state.modelError = '';
+    state.modelStatus = '正在获取模型列表…';
+    state.modelStatusType = 'loading';
+    state.modelListOpen = false;
     render();
     try {
       const models = await getModelList({ apiurl, key: state.settingsDraft.key.trim() });
@@ -1349,9 +1391,27 @@ async function start() {
           models.filter(item => typeof item === 'string' && item.trim()).map(item => item.trim())
         ),
       ].sort((a, b) => a.localeCompare(b));
-      if (!state.models.length) state.modelError = '接口返回的模型列表为空，仍可手动填写模型';
+      if (!state.models.length) {
+        state.modelError = '接口返回的模型列表为空，仍可手动填写模型';
+        state.modelStatus = state.modelError;
+        state.modelStatusType = 'error';
+        state.modelListOpen = false;
+      } else {
+        state.modelError = '';
+        state.modelStatus = `获取成功 · ${state.models.length} 个模型`;
+        state.modelStatusType = 'success';
+        state.modelListOpen = true;
+        if (!state.settingsDraft.model.trim() && state.models.length === 1) {
+          state.settingsDraft.model = state.models[0];
+          delete state.settingsErrors.model;
+        }
+      }
     } catch (error) {
+      state.models = [];
       state.modelError = `获取失败：${errorMessage(error)}`;
+      state.modelStatus = state.modelError;
+      state.modelStatusType = 'error';
+      state.modelListOpen = false;
     } finally {
       state.modelsLoading = false;
       render();
@@ -1466,11 +1526,31 @@ async function start() {
     } else if (action === 'generate-candidates') generateCandidates();
     else if (action === 'generate-complete') generateComplete();
     else if (action === 'load-models') loadModels();
-    else if (action === 'save-settings') saveSettings();
+    else if (action === 'toggle-model-list') {
+      if (state.models.length) {
+        state.modelListOpen = !state.modelListOpen;
+        render();
+      }
+    } else if (action === 'select-model') {
+      const model = state.models[Number(button.dataset.modelIndex)];
+      if (model) {
+        state.settingsDraft.model = model;
+        delete state.settingsErrors.model;
+        state.modelError = '';
+        state.modelStatus = `获取成功 · ${state.models.length} 个模型 · 已选择 ${model}`;
+        state.modelStatusType = 'success';
+        state.modelListOpen = false;
+        render();
+      }
+    } else if (action === 'save-settings') saveSettings();
     else if (action === 'reset-settings') {
       state.settingsDraft = clone(DEFAULT_SETTINGS);
       state.settingsErrors = {};
+      state.models = [];
       state.modelError = '';
+      state.modelStatus = '';
+      state.modelStatusType = '';
+      state.modelListOpen = false;
       state.notice = '已恢复默认值，点击“保存设置”后生效。';
       state.noticeType = '';
       render();
