@@ -1,7 +1,6 @@
 {
-  "name": "hilos-automatic-summary",
-  "version": "0.2.12",
-  "description": "一个自动总结脚本",
+  "name": "Character-folio-workbench",
+  "version": "0.1",
   "type": "module",
   "scripts": {
     "dev": "vite build --watch --mode development",
